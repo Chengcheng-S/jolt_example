@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Jolt x WASMn</title>
+    </head>
+    <body>
+        <h1>Jolt x WASM</h1>
+
+    <div style="margin-bottom: 10px;">
+        <input type="file" id="proofFile_fib" />
+        <button id="verifyButton_fib">Verify Proof for fib-Function</button>
+    </div>
+
+    <script type="module">
+        import init, { verify_fib } from './pkg/wasmcode.js';
+
+        async function run() {
+            await init();
+
+            document.getElementById('verifyButton_fib').addEventListener('click', async () => {
+                const fileInput = document.getElementById('proofFile_fib');
+                if (fileInput.files.length === 0) {
+                    alert("Please select a proof file first.");
+                    return;
+                }
+
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = async (event) => {
+                    const proofArrayBuffer = event.target.result;
+                    const proofData = new Uint8Array(proofArrayBuffer);
+
+                    // Fetch preprocessing data and prepare wasm binary to json conversion
+                    const response = await fetch('target/wasm32-unknown-unknown/release/preprocessed_fib.bin')
+                    const wasmBinary = await response.arrayBuffer();
+                    const wasmData = new Uint8Array(wasmBinary);
+
+                    const result = verify_fib(wasmData, proofData);
+                    alert(result ? "Proof is valid!" : "Proof is invalid.");
+                };
+
+                reader.readAsArrayBuffer(file);
+            });
+
+            }
+
+            run();
+        </script>
+    </body>
+</html>
